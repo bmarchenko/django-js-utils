@@ -2,8 +2,20 @@ var django_js_utils = {};
 
 django_js_utils.urls = function(){
 
-    function _get_path(name, kwargs, urls)
+    function _get_path(full_name, kwargs, resolver)
     {
+        var parts = full_name.split(":");
+        var name = parts[parts.length-1];
+
+        for (var i = 0; i < parts.length-1; i++)
+        {
+            if (!(resolver = resolver.ns[parts[i]]))
+            {
+                throw(parts[i] + ' is not registered namespace');
+            }
+        }
+
+        var urls = resolver.urls;
 
         var path = urls[name] || false;
 
@@ -38,13 +50,13 @@ django_js_utils.urls = function(){
     }
 
     return {
-        resolve: function(name, kwargs, urls) {
-            if (!urls)
+        resolve: function(full_name, kwargs, resolver) {
+            if (!resolver)
             {
-                urls = django_js_utils_urlconf || {};
+                resolver = django_js_utils_urlconf || {};
             }
 
-            return _get_path(name, kwargs, urls);
+            return _get_path(full_name, kwargs, resolver);
         }
     };
 
