@@ -49,15 +49,14 @@ def prepare_response():
                     full_url = full_url.replace(el, "<>")#replace by a empty parameter name
                 js_patterns[view_prefix+pattern.name] = "/" + full_url
 
-
     handle_url_module(settings.ROOT_URLCONF)
-    response = HttpResponse(mimetype='text/javascript')
-    response.write('django_js_utils_urlconf = ' + json.dumps(js_patterns))
-    return response
+    return 'django_js_utils_urlconf = ' + json.dumps(js_patterns)
 
-_response = prepare_response()
+_urlconf = prepare_response()
 
 
 def jsurls(request):
-    return _response
+    response = HttpResponse(mimetype='text/javascript')
+    response.write(_urlconf)
+    return response
 
