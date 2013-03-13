@@ -1,17 +1,19 @@
+# -*- coding: utf-8 -*-
+
 import re
 import sys
 
 from django.conf import settings
+from django.core.urlresolvers import RegexURLResolver, get_urlconf
 from django.http import HttpResponse
-import django.utils.simplejson as json
-from django.core.urlresolvers import RegexURLResolver
+from django.utils import simplejson as json
 
 from django_js_utils.core import _patterns
 
 
-def prepare_response():
-    RE_KWARG = re.compile(r"(\(\?P<(.*?)>.*?\))") #Pattern for recognizing named parameters in urls
-    RE_ARG = re.compile(r"(\(.*?\))") #Pattern for recognizing unnamed url parameters
+def prepare_response(urlconf=settings.ROOT_URLCONF):
+    RE_KWARG = re.compile(r"(\(\?P<(.*?)>.*?\))")  # Pattern for recognizing named parameters in urls
+    RE_ARG = re.compile(r"(\(.*?\))")  # Pattern for recognizing unnamed url parameters
 
     js_patterns = {}
 
@@ -36,27 +38,34 @@ def prepare_response():
                 )
             elif pattern in _patterns:
                 full_url = prefix + pattern.regex.pattern
-                for chr in ["^","$"]:
+                for chr in ["^", "$"]:
                     full_url = full_url.replace(chr, "")
                     #handle kwargs, args
                 kwarg_matches = RE_KWARG.findall(full_url)
+
                 for el in kwarg_matches:
                     #prepare the output for JS resolver
                     full_url = full_url.replace(el[0], "<%s>" % el[1])
                     #after processing all kwargs try args
                 args_matches = RE_ARG.findall(full_url)
                 for el in args_matches:
-                    full_url = full_url.replace(el, "<>")#replace by a empty parameter name
-                js_patterns[view_prefix+pattern.name] = "/" + full_url
+                    full_url = full_url.replace(el, "<>")  # replace by a empty parameter name
+                js_patterns[view_prefix + pattern.name] = "/" + full_url
 
-    handle_url_module(settings.ROOT_URLCONF)
+    handle_url_module(urlconf)
     return 'django_js_utils_urlconf = ' + json.dumps(js_patterns)
 
-_urlconf = prepare_response()
+_urlconfs = {
+    settings.ROOT_URLCONF: prepare_response()
+}
 
 
 def jsurls(request):
+    urlconf = settings.ROOT_URLCONF
+    if hasattr(request, 'urlconf'):
+        urlconf = request.urlconf
+    if urlconf not in _urlconfs:
+        _urlconfs[urlconf] = prepare_response(urlconf)
     response = HttpResponse(mimetype='text/javascript')
-    response.write(_urlconf)
+    response.write(_urlconfs.get(urlconf))
     return response
-
