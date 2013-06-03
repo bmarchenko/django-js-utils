@@ -25,8 +25,10 @@ def prepare_response(urlconf=settings.ROOT_URLCONF):
         if isinstance(module_name, basestring):
             __import__(module_name)
             patterns = sys.modules[module_name].urlpatterns
-        else:
+        elif isinstance(module_name, list):
             patterns = module_name
+        else:
+            patterns = module_name.urlpatterns
 
         for pattern in patterns:
             if isinstance(pattern, RegexURLResolver) and pattern.urlconf_name:
@@ -54,6 +56,7 @@ def prepare_response(urlconf=settings.ROOT_URLCONF):
 
     handle_url_module(urlconf)
     return 'django_js_utils_urlconf = ' + json.dumps(js_patterns)
+
 
 _urlconfs = {
     settings.ROOT_URLCONF: prepare_response()
