@@ -30,4 +30,5 @@ setup(
         'Topic :: Internet :: WWW/HTTP',
     ],
     keywords=["javascript"],
+    include_package_date=True
 )
